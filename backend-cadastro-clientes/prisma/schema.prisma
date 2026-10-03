@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  senha             String
+  nome              String
+  role              Role      @default(CLIENTE)
+  cliente           Cliente?  @relation(fields: [clienteId], references: [id])
+  clienteId         String?   @unique          // <-- Tornando único para relação one-to-one
+  refreshTokens     RefreshToken[]
+  codigoRecuperacao CodigoRecuperacao?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model Cliente {
+  id        String     @id @default(uuid())
+  nome      String
+  cpf       String?    @unique
+  telefones String[]   @default([])
+  enderecos Endereco[] // <-- Cliente pode ter vários endereços
+  pedidos   Pedido[]
+  usuario   Usuario?   // relação inversa (opcional)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Endereco {
+  id          String  @id @default(uuid())
+  cliente     Cliente @relation(fields: [clienteId], references: [id])
+  clienteId   String
+  rua         String
+  numero      String
+  complemento String?
+  bairro      String
+  cidade      String
+  estado      String
+  cep         String
+  criadoEm    DateTime @default(now())
+}
+
+model CategoriaProduto {
+  id        String    @id @default(uuid())
+  nome      String
+  produtos  Produto[]
+  criadoEm  DateTime  @default(now())
+}
+
+model Produto {
+  id          String   @id @default(uuid())
+  nome        String
+  descricao   String?
+  preco       Float
+  estoque     Int
+  categoria   CategoriaProduto @relation(fields: [categoriaId], references: [id])
+  categoriaId String
+  itensPedido ItemPedido[]
+  criadoEm    DateTime @default(now())
+}
+
+model Pedido {
+  id         String       @id @default(uuid())
+  cliente    Cliente      @relation(fields: [clienteId], references: [id])
+  clienteId  String
+  itens      ItemPedido[]
+  total      Float
+  status     StatusPedido @default(PENDENTE)
+  criadoEm   DateTime     @default(now())
+}
+
+model ItemPedido {
+  id        String   @id @default(uuid())
+  pedido    Pedido   @relation(fields: [pedidoId], references: [id])
+  pedidoId  String
+  produto   Produto  @relation(fields: [produtoId], references: [id])
+  produtoId String
+  quantidade Int
+  precoUnitario Float
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  usuarioId String
+  expiracao DateTime
+  criadoEm  DateTime @default(now())
+}
+
+model CodigoRecuperacao {
+  id        String   @id @default(uuid())
+  codigo    String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  usuarioId String   @unique
+  expiracao DateTime
+  criadoEm  DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  CLIENTE
+  VENDEDOR
+}
+
+enum StatusPedido {
+  PENDENTE
+  PROCESSANDO
+  ENVIADO
+  ENTREGUE
+  CANCELADO
+}

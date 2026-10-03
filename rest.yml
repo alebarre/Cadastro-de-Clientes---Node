@@ -1,0 +1,455 @@
+```yaml
+openapi: 3.0.3
+info:
+  title: API Cadastro de Clientes
+  version: "1.0.0"
+  description: >
+    Especificação OpenAPI v3 para a API de Cadastro de Clientes (autenticação JWT + refresh token, roles, clientes, endereços, produtos, categorias e pedidos).
+    Ajuste o servidor abaixo conforme seu ambiente antes de importar no Bruno.
+servers:
+  - url: http://localhost:4000/api
+    description: Servidor local (ajuste para seu ambiente)
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    UsuarioCriar:
+      type: object
+      required:
+        - email
+        - senha
+        - nome
+      properties:
+        email:
+          type: string
+          format: email
+        senha:
+          type: string
+        nome:
+          type: string
+        role:
+          type: string
+          enum: [ADMIN, CLIENTE, VENDEDOR]
+          default: CLIENTE
+
+    RespostaLogin:
+      type: object
+      properties:
+        tokenAcesso:
+          type: string
+        tokenRefresh:
+          type: string
+        usuario:
+          type: object
+
+    RefreshRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+
+    ForgotRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+
+    ForgotConfirmRequest:
+      type: object
+      required:
+        - email
+        - codigo
+        - novaSenha
+      properties:
+        email:
+          type: string
+          format: email
+        codigo:
+          type: string
+        novaSenha:
+          type: string
+
+    ClienteCriar:
+      type: object
+      required:
+        - nome
+      properties:
+        nome:
+          type: string
+        cpf:
+          type: string
+        telefones:
+          type: array
+          items:
+            type: string
+
+    Endereco:
+      type: object
+      properties:
+        id:
+          type: string
+        clienteId:
+          type: string
+        rua:
+          type: string
+        numero:
+          type: string
+        complemento:
+          type: string
+        bairro:
+          type: string
+        cidade:
+          type: string
+        estado:
+          type: string
+        cep:
+          type: string
+        criadoEm:
+          type: string
+          format: date-time
+
+    CategoriaProdutoCriar:
+      type: object
+      required:
+        - nome
+      properties:
+        nome:
+          type: string
+
+    ProdutoCriar:
+      type: object
+      required:
+        - nome
+        - preco
+        - estoque
+        - categoriaId
+      properties:
+        nome:
+          type: string
+        descricao:
+          type: string
+        preco:
+          type: number
+          format: float
+        estoque:
+          type: integer
+        categoriaId:
+          type: string
+
+    PedidoCriar:
+      type: object
+      required:
+        - clienteId
+        - itens
+      properties:
+        clienteId:
+          type: string
+        itens:
+          type: array
+          items:
+            type: object
+            required: [produtoId, quantidade]
+            properties:
+              produtoId:
+                type: string
+              quantidade:
+                type: integer
+
+    Erro:
+      type: object
+      properties:
+        erro:
+          type: string
+
+paths:
+  /auth/register:
+    post:
+      summary: Registrar usuário
+      description: Cria um novo usuário. Role opcional (ADMIN, CLIENTE, VENDEDOR).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioCriar'
+      responses:
+        '201':
+          description: Usuário criado
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+  /auth/login:
+    post:
+      summary: Autenticar usuário
+      description: Retorna token de acesso e refresh token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, senha]
+              properties:
+                email:
+                  type: string
+                senha:
+                  type: string
+      responses:
+        '200':
+          description: Tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaLogin'
+        '400':
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+  /auth/refresh:
+    post:
+      summary: Renovar token de acesso
+      description: Recebe refresh token e retorna novo token de acesso.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Novo token de acesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tokenAcesso:
+                    type: string
+        '400':
+          description: Refresh inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+  /auth/forgot:
+    post:
+      summary: Iniciar recuperação de senha
+      description: Envia código por e-mail para recuperação de senha.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotRequest'
+      responses:
+        '200':
+          description: Código enviado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensagem:
+                    type: string
+        '400':
+          description: Erro
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+  /auth/forgot/confirm:
+    post:
+      summary: Confirmar recuperação e trocar senha
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotConfirmRequest'
+      responses:
+        '200':
+          description: Senha atualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensagem:
+                    type: string
+        '400':
+          description: Código inválido ou expirado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+  /clientes:
+    post:
+      summary: Cadastrar cliente
+      description: Requer role ADMIN ou VENDEDOR. Cria cliente com múltiplos endereços possíveis.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClienteCriar'
+      responses:
+        '201':
+          description: Cliente criado
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        '403':
+          description: Acesso negado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+    get:
+      summary: Listar clientes
+      description: Retorna lista de clientes com endereços e pedidos. Requer role ADMIN ou VENDEDOR.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Lista de clientes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+  /produtos/categoria:
+    post:
+      summary: Cadastrar categoria de produto
+      description: Requer role ADMIN.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoriaProdutoCriar'
+      responses:
+        '201':
+          description: Categoria criada
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        '403':
+          description: Acesso negado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+  /produtos:
+    post:
+      summary: Cadastrar produto
+      description: Requer role ADMIN.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProdutoCriar'
+      responses:
+        '201':
+          description: Produto criado
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+  /pedidos:
+    post:
+      summary: Criar pedido
+      description: Cria pedido para cliente com itens. Calcula total no servidor.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PedidoCriar'
+      responses:
+        '201':
+          description: Pedido criado
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+tags:
+  - name: Auth
+    description: Endpoints de autenticação e recuperação de senha
+  - name: Clientes
+    description: Endpoints para gerenciar clientes e endereços
+  - name: Produtos
+    description: Endpoints para gerenciar produtos e categorias
+  - name: Pedidos
+    description: Endpoints para criar e consultar pedidos
+```

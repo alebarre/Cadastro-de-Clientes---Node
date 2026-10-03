@@ -1,0 +1,7 @@
+# Use this workspace to collaborate
+workspace:
+  id: 7aeffdff-19b2-4129-bced-c9e5b1348226
+
+localResources:
+  collections:
+    - ../rest.json

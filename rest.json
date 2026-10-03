@@ -1,0 +1,274 @@
+{
+  "info": {
+    "name": "Bruno - Cadastro Clientes API",
+    "description": "Coleção Postman v2.1 para importar no Bruno. Contém endpoints de autenticação, clientes e produtos (JWT + refresh token). Ajuste {{baseUrl}} conforme ambiente.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000/api",
+      "type": "string"
+    },
+    {
+      "key": "tokenAcesso",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tokenRefresh",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Registrar Usuário",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"usuario@example.com\",\n  \"senha\": \"senha123\",\n  \"nome\": \"Nome Usuario\",\n  \"role\": \"CLIENTE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login (obter tokenAcesso e tokenRefresh)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"senha\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Extrai tokenAcesso e tokenRefresh da resposta e salva em variáveis de coleção",
+                  "const resp = pm.response.json();",
+                  "if (resp.tokenAcesso) { pm.collectionVariables.set('tokenAcesso', resp.tokenAcesso); }",
+                  "if (resp.tokenRefresh) { pm.collectionVariables.set('tokenRefresh', resp.tokenRefresh); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Renovar Token (refresh)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{tokenRefresh}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const resp = pm.response.json();",
+                  "if (resp.tokenAcesso) { pm.collectionVariables.set('tokenAcesso', resp.tokenAcesso); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Esqueci Senha (enviar código por e-mail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"usuario@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Confirmar Recuperação (trocar senha com código)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"usuario@example.com\",\n  \"codigo\": \"123456\",\n  \"novaSenha\": \"novaSenha123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot", "confirm"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Clientes",
+      "item": [
+        {
+          "name": "Cadastrar Cliente (ADMIN/VENDEDOR)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAcesso}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"João Silva\",\n  \"cpf\": \"12345678900\",\n  \"telefones\": [\"21999999999\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/clientes",
+              "host": ["{{baseUrl}}"],
+              "path": ["clientes"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar Clientes (ADMIN/VENDEDOR)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAcesso}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/clientes",
+              "host": ["{{baseUrl}}"],
+              "path": ["clientes"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Produtos",
+      "item": [
+        {
+          "name": "Cadastrar Categoria Produto (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAcesso}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Eletrônicos\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/produtos/categoria",
+              "host": ["{{baseUrl}}"],
+              "path": ["produtos", "categoria"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cadastrar Produto (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAcesso}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Fone Bluetooth\",\n  \"descricao\": \"Fone sem fio\",\n  \"preco\": 199.9,\n  \"estoque\": 50,\n  \"categoriaId\": \"<COLOQUE_ID_CATEGORIA_AQUI>\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/produtos",
+              "host": ["{{baseUrl}}"],
+              "path": ["produtos"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
