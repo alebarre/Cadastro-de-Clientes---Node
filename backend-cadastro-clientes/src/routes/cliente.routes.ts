@@ -11,5 +11,6 @@ const router = Router();
 
 router.post("/", autenticarJWT, verificarRole(["ADMIN", "VENDEDOR"]), ClienteController.cadastrarCliente);
 router.get("/", autenticarJWT, verificarRole(["ADMIN", "VENDEDOR"]), ClienteController.listarClientes);
+router.get("/cliente/:id", autenticarJWT, verificarRole(["ADMIN", "VENDEDOR"]), ClienteController.obterCliente);
 
 export default router;

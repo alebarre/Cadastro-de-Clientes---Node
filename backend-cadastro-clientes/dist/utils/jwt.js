@@ -31,6 +31,15 @@ function gerarTokenAcesso(payload) {
  * Verifica e decodifica um token JWT de acesso.
  */
 function verificarTokenAcesso(token) {
+    if (!token) {
+        throw new Error("Token de acesso não fornecido");
+    }
+    else if (typeof token !== "string") {
+        throw new Error("Token de acesso inválido");
+    }
+    else if (token.trim() === "") {
+        throw new Error("Token de acesso vazio");
+    }
     return jsonwebtoken_1.default.verify(token, JWT_SECRET);
 }
 /**

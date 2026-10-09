@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.cadastrarCliente = cadastrarCliente;
 exports.listarClientes = listarClientes;
+const client_1 = require("@prisma/client");
 const prismaClient_1 = __importDefault(require("../prismaClient"));
 /**
  * cadastrarCliente
@@ -12,13 +13,16 @@ const prismaClient_1 = __importDefault(require("../prismaClient"));
  */
 async function cadastrarCliente(req, res) {
     try {
-        const { nome, cpf, telefones } = req.body;
+        const { nome, cpf, telefones, enderecos } = req.body;
         const cliente = await prismaClient_1.default.cliente.create({
-            data: { nome, cpf, telefones }
+            data: { nome, cpf, telefones, enderecos }
         });
         return res.status(201).json(cliente);
     }
     catch (err) {
+        if (err instanceof client_1.Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+            return res.status(409).json({ erro: "Já existe um cliente cadastrado com este CPF" });
+        }
         return res.status(400).json({ erro: err.message });
     }
 }

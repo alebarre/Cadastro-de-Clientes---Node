@@ -26,6 +26,13 @@ export function gerarTokenAcesso(payload: object) {
  * Verifica e decodifica um token JWT de acesso.
  */
 export function verificarTokenAcesso(token: string) {
+  if (!token) {
+    throw new Error("Token de acesso não fornecido");
+  } else if (typeof token !== "string") {
+    throw new Error("Token de acesso inválido");
+  } else if (token.trim() === "") {
+    throw new Error("Token de acesso vazio");
+  }
   return jwt.verify(token, JWT_SECRET);
 }
 
